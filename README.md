@@ -69,9 +69,9 @@ fork to your machine using one of the commands below, depending on your OS.
 > Your fork's URL will be something like this:
 > `https://github.com/<your_github_username>/kickstart.nvim.git`
 
-You likely want to remove `nvim-pack-lock.json` from your fork's `.gitignore`
+You likely want to remove `lazy-lock.json` from your fork's `.gitignore`
 file too - it's ignored in the kickstart repo to make maintenance easier, but
-it's recommended to track it in version control (see `:help vim.pack-lockfile`).
+it's recommended to track it in version control.
 
 #### Clone kickstart.nvim
 
@@ -111,10 +111,8 @@ Start Neovim
 nvim
 ```
 
-That's it! `vim.pack` will install all the plugins from your config. Use
-`:lua vim.pack.update(nil, { offline = true })` to inspect plugin state and
-`:lua vim.pack.update()` to fetch updates (`:write` applies updates, `:quit`
-cancels them).
+That's it! `lazy.nvim` will install all the plugins from your config. Use
+`:Lazy check` to inspect plugin state and `:Lazy update` to fetch updates.
 
 #### Read The Friendly Documentation
 
@@ -177,26 +175,21 @@ Recommended: install `make` (see the chocolatey section below).
 
 If you want a CMake-only setup, customize `init.lua` in two places:
 
-1. Include `telescope-fzf-native.nvim` when `cmake` is available:
+1. Update the plugin spec for `telescope-fzf-native.nvim`:
 
 ```lua
-if vim.fn.executable 'make' == 1 or vim.fn.executable 'cmake' == 1 then
-  table.insert(plugins, gh 'nvim-telescope/telescope-fzf-native.nvim')
-end
-```
-
-2. In the `PackChanged` hook, use CMake when `make` is unavailable:
-
-```lua
-if name == 'telescope-fzf-native.nvim' then
-  if vim.fn.executable 'make' == 1 then
-    run_build(name, { 'make' }, ev.data.path)
-  elseif vim.fn.executable 'cmake' == 1 then
-    run_build(name, { 'cmake', '-S.', '-Bbuild', '-DCMAKE_BUILD_TYPE=Release' }, ev.data.path)
-    run_build(name, { 'cmake', '--build', 'build', '--config', 'Release', '--target', 'install' }, ev.data.path)
-  end
-  return
-end
+{
+  'nvim-telescope/telescope-fzf-native.nvim',
+  cond = function() return vim.fn.executable 'make' == 1 or vim.fn.executable 'cmake' == 1 end,
+  build = function()
+    if vim.fn.executable 'make' == 1 then
+      vim.fn.system { 'make' }
+    else
+      vim.fn.system { 'cmake', '-S.', '-Bbuild', '-DCMAKE_BUILD_TYPE=Release' }
+      vim.fn.system { 'cmake', '--build', 'build', '--config', 'Release', '--target', 'install' }
+    end
+  end,
+}
 ```
 
 See `telescope-fzf-native` documentation for [build details](https://github.com/nvim-telescope/telescope-fzf-native.nvim#installation).
